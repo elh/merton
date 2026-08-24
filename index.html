@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="An interactive explanation of Merton's portfolio problem and the optimal risky share."
+    />
+    <link rel="icon" href="/favicon.svg" />
+    <link rel="stylesheet" href="/styles.css" />
+    <title>Merton’s Portfolio Problem</title>
+  </head>
+  <body>
+    <main>
+      <article class="notebook">
+        <aside class="controls-rail" aria-label="Optimal risky share">
+          <div class="rail-heading">Optimal risky share</div>
+          <div class="rail-result" aria-live="polite">
+            <strong><i>π</i><sup>∗</sup> = <span id="rail-share"></span></strong>
+          </div>
+          <div class="controls">
+            <label class="control" data-control="mu">
+              <span class="control-heading">
+                <span><i>μ</i> <span class="control-label">Expected return</span></span>
+                <output id="mu-output"></output>
+              </span>
+              <span class="control-description">
+                Risky asset · annualized
+              </span>
+              <input aria-label="Expected return" data-key="mu" type="range" min="0" max="0.15" step="0.0025" />
+            </label>
+
+            <label class="control" data-control="r">
+              <span class="control-heading">
+                <span><i>r</i> <span class="control-label">Risk-free rate</span></span>
+                <output id="r-output"></output>
+              </span>
+              <span class="control-description">
+                Continuously compounded cash return
+              </span>
+              <input aria-label="Risk-free rate" data-key="r" type="range" min="0" max="0.08" step="0.0025" />
+            </label>
+
+            <label class="control" data-control="sigma">
+              <span class="control-heading">
+                <span><i>σ</i> <span class="control-label">Volatility</span></span>
+                <output id="sigma-output"></output>
+              </span>
+              <span class="control-description">
+                Annualized standard deviation · 10–25% typical
+              </span>
+              <input aria-label="Volatility" data-key="sigma" type="range" min="0.05" max="0.5" step="0.005" />
+            </label>
+
+            <label class="control" data-control="gamma">
+              <span class="control-heading">
+                <span><i>γ</i> <span class="control-label">Risk aversion</span></span>
+                <output id="gamma-output"></output>
+              </span>
+              <span class="control-description">
+                Higher values mean greater risk aversion
+              </span>
+              <input aria-label="Risk aversion" data-key="gamma" type="range" min="0.5" max="10" step="0.25" />
+            </label>
+          </div>
+
+          <div class="scenario-heading">Scenarios</div>
+          <div class="scenario-row" aria-label="Example scenarios">
+            <button
+              type="button"
+              class="scenario"
+              data-scenario="current-global-equities"
+              data-mu="0.05"
+              data-r="0.0375"
+              data-sigma="0.125"
+              data-gamma="3"
+            >
+              <span class="scenario-title">Current global equities</span>
+              <span class="scenario-description">VT against 3-month Treasury bills, using August 2026 inputs.</span>
+              <span class="scenario-values"></span>
+            </button>
+            <button
+              type="button"
+              class="scenario"
+              data-scenario="higher-risk-aversion"
+              data-mu="0.05"
+              data-r="0.0375"
+              data-sigma="0.125"
+              data-gamma="6"
+            >
+              <span class="scenario-title">Higher risk aversion</span>
+              <span class="scenario-description">The same market, but twice the baseline value of <i>γ</i>.</span>
+              <span class="scenario-values"></span>
+            </button>
+            <button
+              type="button"
+              class="scenario"
+              data-scenario="volatility-shock"
+              data-mu="0.05"
+              data-r="0.0375"
+              data-sigma="0.3"
+              data-gamma="3"
+            >
+              <span class="scenario-title">Volatility shock</span>
+              <span class="scenario-description">The same outlook, with volatility alone rising to a stressed level.</span>
+              <span class="scenario-values"></span>
+            </button>
+            <button
+              type="button"
+              class="scenario"
+              data-scenario="low-rate-regime"
+              data-mu="0.05"
+              data-r="0.015"
+              data-sigma="0.125"
+              data-gamma="3"
+            >
+              <span class="scenario-title">Low-rate regime</span>
+              <span class="scenario-description">The same equity outlook when cash offers much less competition.</span>
+              <span class="scenario-values"></span>
+            </button>
+            <button
+              type="button"
+              class="scenario"
+              data-scenario="historical-extrapolation"
+              data-mu="0.09"
+              data-r="0.0375"
+              data-sigma="0.125"
+              data-gamma="3"
+            >
+              <span class="scenario-title">Historical-return extrapolation</span>
+              <span class="scenario-description">A backward-looking return assumption pushes the unconstrained rule past 100%.</span>
+              <span class="scenario-values"></span>
+            </button>
+          </div>
+        </aside>
+
+        <div class="article-copy">
+          <h1 class="article-title">
+            <a href="https://en.wikipedia.org/wiki/Merton%27s_portfolio_problem">Merton's portfolio problem</a>
+          </h1>
+          <p>
+            asks how an investor should divide wealth between a risky asset and a risk-free asset while choosing
+            consumption over time. The objective is to maximize
+            <a href="https://en.wikipedia.org/wiki/Expected_utility_hypothesis">expected utility</a>. The problem was formulated and solved by
+            <a href="https://en.wikipedia.org/wiki/Robert_C._Merton">Robert C. Merton</a>
+            in 1969 for both finite and infinite horizons.
+          </p>
+
+          <p>
+            We will state the full problem, then focus on how its continuous-time machinery collapses into
+            an <a href="#portfolio-rule"><strong>elegantly simple rule</strong> ↓</a> for sizing the risky asset.
+          </p>
+
+          <p class="interaction-note">
+            The values shown in <span>red</span> are calculated from the variables in the right rail.
+          </p>
+
+          <section aria-labelledby="problem-statement">
+            <h2 id="problem-statement">Problem statement</h2>
+
+            <p>
+              The investor lives from time 0 to time <i>T</i>; their wealth at time <i>T</i> is denoted
+              <i>W</i><sub>T</sub>. They start with a known initial wealth <i>W</i><sub>0</sub>.
+              At time <i>t</i> they must choose their consumption rate,
+              <i>c</i><sub>t</sub>, and the fraction of wealth to invest in the risky asset,
+              <i>π</i><sub>t</sub> (the remaining fraction 1 − <i>π</i><sub>t</sub> being invested in the risk-free asset).
+            </p>
+
+            <p>
+              The objective is to choose consumption and portfolio allocation to maximize expected utility
+              from consumption over time and wealth left at <i>T</i>:
+            </p>
+
+            <div class="math-display tex-equation" id="objective-equation" aria-label="Maximize expected discounted utility of consumption and terminal wealth"></div>
+
+            <p>
+              where <i>E</i> is the <a href="https://en.wikipedia.org/wiki/Expected_value">expectation operator</a>,
+              <i>u</i> is a known <a href="https://en.wikipedia.org/wiki/Utility">utility function</a>
+              (which applies both to consumption and to the terminal wealth, or
+              <a href="https://en.wikipedia.org/wiki/Bequest_motive">bequest</a>, <i>W</i><sub>T</sub>),
+              <i>ε</i> parameterizes the desired level of bequest, <i>ρ</i> is the subjective discount rate,
+              and <i>γ</i> measures the investor's
+              <a href="https://en.wikipedia.org/wiki/Risk_aversion">risk aversion</a>.
+            </p>
+
+            <p>
+              The full problem jointly determines consumption and investment. We retain that setup, but follow
+              its portfolio component: under the assumptions below, <i>ρ</i>, <i>ε</i>, and <i>T</i> shape the
+              consumption policy but do not appear in the optimal risky share.
+            </p>
+
+            <p>
+              The wealth evolves according to the
+              <a href="https://en.wikipedia.org/wiki/Stochastic_differential_equation">stochastic differential equation</a>
+            </p>
+
+            <div class="math-display tex-equation" id="wealth-equation" data-uses="r mu sigma" aria-label="Merton wealth stochastic differential equation"></div>
+
+            <p>
+              where <i>r</i> is the <a href="https://en.wikipedia.org/wiki/Risk-free_interest_rate">risk-free rate</a>,
+              <i>μ</i> is the risky asset’s <a href="https://en.wikipedia.org/wiki/Expected_return">expected return</a>,
+              <i>σ</i> is its <a href="https://en.wikipedia.org/wiki/Volatility_(finance)">volatility</a>, and
+              <i>dB</i><sub>t</sub> is a random shock from a <a href="https://en.wikipedia.org/wiki/Wiener_process">Wiener process</a>.
+              The model treats <i>r</i>, <i>μ</i>, and <i>σ</i> as fixed.
+            </p>
+
+            <p>
+              The utility function is of the
+              <a href="https://en.wikipedia.org/wiki/Isoelastic_utility">constant relative risk aversion</a>
+              (CRRA) form:
+            </p>
+
+            <div class="math-display tex-equation" id="utility-equation" aria-label="CRRA utility function"></div>
+
+            <p class="formula-focus-note">
+              At <i>γ</i> = 1, the limiting form is <i>u</i>(<i>x</i>) = log <i>x</i>.
+            </p>
+
+            <div class="integrated-model utility-model" data-uses="gamma">
+              <p>
+                The parameter <i>γ</i> controls the curvature of utility. Consider a 50–50 chance of ending with
+                $75 or $125. Its expected wealth is $100, but a risk-averse investor values the gamble like a
+                smaller certain amount. The same <i>γ</i> appears in the denominator of the allocation rule below:
+                greater curvature produces a smaller risky-position magnitude.
+              </p>
+
+              <figure class="utility-figure">
+                <canvas
+                  id="utility-chart"
+                  width="1280"
+                  height="280"
+                  role="img"
+                  aria-label="CRRA utility over wealth from 50 to 150 dollars"
+                ></canvas>
+                <figcaption class="figure-caption">
+                  CRRA utility at <i>γ</i> = <span class="live-number" id="utility-gamma"></span>.
+                  The highlighted point is the
+                  <a href="https://en.wikipedia.org/wiki/Certainty_equivalent">certainty equivalent</a>.
+                </figcaption>
+              </figure>
+
+              <dl class="experiment-metrics">
+                <div>
+                  <dt>Expected wealth</dt>
+                  <dd>$100</dd>
+                </div>
+                <div>
+                  <dt>Certainty equivalent</dt>
+                  <dd class="live-number" id="certainty-equivalent"></dd>
+                </div>
+              </dl>
+
+              <p class="callout-note" id="utility-explanation" aria-live="polite"></p>
+            </div>
+
+            <p>
+              Consumption must remain nonnegative: <i>c</i><sub>t</sub> ≥ 0.
+            </p>
+          </section>
+
+          <section data-uses="mu r sigma gamma" aria-labelledby="solution">
+            <h2 id="solution">Solution</h2>
+
+            <p>
+              The portfolio choice balances reward against risk. Investing a fraction <i>π</i> in the risky asset
+              contributes expected reward <i>π</i>(<i>μ</i> − <i>r</i>). Its
+              <a href="https://en.wikipedia.org/wiki/Variance">variance</a> grows as
+              <i>π</i><sup>2</sup><i>σ</i><sup>2</sup>, and <i>γ</i> determines how strongly that risk is penalized.
+              The relevant tradeoff is
+            </p>
+
+            <div class="tradeoff-equation tex-equation tex-left" id="tradeoff-equation"></div>
+
+            <p>
+              The reward is linear in <i>π</i>; the risk penalty is quadratic.
+            </p>
+
+            <figure class="tradeoff-figure">
+              <svg class="tradeoff-chart" viewBox="0 0 740 220" role="img" aria-labelledby="tradeoff-title tradeoff-description">
+                <title id="tradeoff-title">Reward minus risk penalty by risky allocation</title>
+                <desc id="tradeoff-description">A concave reward-minus-risk curve over nonnegative risky allocations.</desc>
+                <line class="chart-zero" id="zero-line"></line>
+                <g id="chart-ticks"></g>
+                <path class="chart-path" id="tradeoff-path"></path>
+                <line class="chart-guide" id="optimum-guide"></line>
+                <circle class="chart-halo" id="optimum-halo" r="9"></circle>
+                <circle class="chart-point" id="optimum" r="4"></circle>
+                <text class="axis-title" x="381" y="218" text-anchor="middle">share of wealth in the risky asset, π</text>
+              </svg>
+              <figcaption class="figure-caption" id="tradeoff-caption" aria-live="polite"></figcaption>
+            </figure>
+
+            <p>
+              At the maximum, the slope is zero:
+              (<i>μ</i> − <i>r</i>) − <i>γπσ</i><sup>2</sup> = 0.
+            </p>
+
+            <div class="portfolio-rule" id="portfolio-rule">
+              <p>Rearranging gives a <strong>closed-form portfolio rule</strong>:</p>
+
+              <div
+                class="math-display tex-equation solution-formula"
+                id="merton-equation"
+                aria-label="Merton fraction with the current assumptions substituted"
+                aria-live="polite"
+              ></div>
+
+              <p class="allocation-result" id="allocation-sentence" aria-live="polite"></p>
+            </div>
+
+            <p>
+              This allocation determines two instantaneous portfolio statistics. Expected return starts with the
+              risk-free return earned by all wealth, then adds
+              <i>π</i><sup>∗</sup> times the risky asset's
+              <a href="https://en.wikipedia.org/wiki/Risk_premium">excess return</a> <i>μ</i> − <i>r</i>.
+              Volatility comes only from the risky position, so the risky asset's
+              volatility <i>σ</i> is scaled by |<i>π</i><sup>∗</sup>|; the absolute value keeps volatility
+              nonnegative when the position is short.
+            </p>
+
+            <div class="solution-implications">
+              <div
+                class="solution-implication tex-equation tex-left"
+                id="portfolio-return-equation"
+                aria-label="Portfolio expected return under the current assumptions"
+                aria-live="polite"
+              ></div>
+              <div
+                class="solution-implication tex-equation tex-left"
+                id="portfolio-volatility-equation"
+                aria-label="Portfolio volatility under the current assumptions"
+                aria-live="polite"
+              ></div>
+            </div>
+
+            <p>
+              The allocation rule above is commonly referred to as Merton's fraction. Neither <i>W</i> nor <i>t</i>
+              appears on the right-hand side, so under the model's assumptions the investor maintains the
+              same risky-asset fraction regardless of current wealth or remaining horizon. The dollar position
+              changes with wealth; the proportion does not.
+            </p>
+
+            <h3>Wealth dynamics</h3>
+            <p>
+              Substituting <i>π</i><sup>∗</sup> back into the wealth equation translates the allocation into
+              expected growth and random variation. At <i>W</i> = $100 with consumption set to zero, the
+              coefficients of <i>dt</i> and <i>dB</i><sub>t</sub> give the expected change per year and the scale of random change:
+            </p>
+
+            <div class="decomposition-equation tex-equation tex-left" id="decomposition-equation" aria-live="polite"></div>
+
+            <p class="callout-note">
+              With <i>π</i><sup>∗</sup> = <span class="live-value" id="wealth-share"></span>, the scale of random change is
+              <span class="live-value" id="wealth-volatility"></span> per square-root year; uncertainty over a short
+              interval <i>Δt</i> grows with √<i>Δt</i>, not <i>Δt</i>.
+            </p>
+
+            <h3>Comparative statics</h3>
+            <p>
+              In <a href="https://en.wikipedia.org/wiki/Comparative_statics">comparative statics</a>, each panel
+              varies one term while holding the others fixed. The middle band is an ordinary 0–100%
+              allocation; below it the solution
+              <a href="https://en.wikipedia.org/wiki/Short_(finance)">shorts the risky asset</a>, and above it the
+              solution uses <a href="https://en.wikipedia.org/wiki/Leverage_(finance)">leverage</a>.
+            </p>
+            <figure class="sensitivity-figure">
+              <canvas
+                class="sensitivity-chart"
+                id="sensitivity-chart"
+                width="1280"
+                height="480"
+                role="img"
+                aria-label="Three charts showing the Merton share as excess return, volatility, and risk aversion vary; the middle band marks allocations between zero and one hundred percent"
+              ></canvas>
+              <figcaption class="figure-caption">
+                The highlighted points show the current assumptions, where <i>π</i><sup>∗</sup> =
+                <span class="live-number" id="sensitivity-current-share"></span>.
+              </figcaption>
+            </figure>
+
+            <div class="formula-rules">
+              <p><strong id="return-sensitivity"></strong><span>added to the risky share for each 1 pp increase in excess return</span></p>
+              <p><strong>¼×</strong><span>the risky share when volatility doubles</span></p>
+              <p><strong>½×</strong><span>the risky share when risk aversion doubles</span></p>
+            </div>
+
+            <p class="constraint-introduction">
+              Merton's fraction is unconstrained. If borrowing and shorting are prohibited, both asset weights
+              must remain between 0% and 100%, so the solution is clipped to that interval:
+            </p>
+            <div class="constraint-equation tex-equation tex-left" id="constraint-equation" aria-live="polite"></div>
+            <p class="callout-note" id="constraint-explanation"></p>
+          </section>
+
+          <p class="source-note">
+            Adapted from
+            <a href="https://en.wikipedia.org/w/index.php?title=Merton%27s_portfolio_problem&amp;oldid=1353989245">“Merton's portfolio problem” on Wikipedia</a>,
+            licensed under <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.
+            <span class="inspiration-note">
+              Inspired by Bret Victor's
+              <a href="https://worrydream.com/ExplorableExplanations/">“Explorable Explanations”</a>.
+            </span>
+            <span class="scenario-source-note">
+              Scenarios combine illustrative August 2026 inputs:
+              <a href="https://advisors.vanguard.com/investments/products/vt/vanguard-total-world-stock-etf">VT’s</a>
+              three-year <i>σ</i> was 12.4%; the 3.75% <i>r</i> approximates a continuously compounded equivalent of the
+              <a href="https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?field_tdr_date_value=2026&amp;type=daily_treasury_bill_rates">13-week Treasury bill’s</a>
+              3.81% coupon-equivalent yield; and 5% <i>μ</i> is an expected-return assumption informed by
+              <a href="https://corporate.vanguard.com/content/corporatesite/us/en/corp/vemo/vemo-return-forecasts.html">Vanguard’s ten-year geometric-return forecasts</a>.
+              <i>γ</i> = 3 is a preference assumption, not a market observation.
+            </span>
+          </p>
+        </div>
+      </article>
+    </main>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
