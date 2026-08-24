@@ -123,13 +123,7 @@ main {
   line-height: var(--leading-subheading);
 }
 
-.interaction-note {
-  color: var(--muted);
-  font-size: var(--type-small);
-  line-height: var(--leading-small);
-}
-
-.interaction-note span {
+.dynamic-text {
   color: var(--dynamic);
 }
 
@@ -147,7 +141,8 @@ main {
 }
 
 .inspiration-note,
-.scenario-source-note {
+.scenario-source-note,
+.repo-note {
   display: block;
   margin-top: 5px;
 }
