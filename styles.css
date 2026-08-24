@@ -176,6 +176,60 @@ main {
   font-size: var(--type-formula-emphasis);
 }
 
+.solution-formula [data-parameter] {
+  color: var(--dynamic);
+  cursor: col-resize;
+  text-decoration-line: underline;
+  text-decoration-thickness: 0.06em;
+  text-underline-offset: 0.15em;
+  text-decoration-skip-ink: none;
+  touch-action: none;
+  user-select: none;
+}
+
+.solution-formula.is-parameter-hovered,
+.solution-formula.is-parameter-hovered * {
+  cursor: col-resize;
+}
+
+html.is-scrubbing,
+html.is-scrubbing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+.scrub-tooltip {
+  position: fixed;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 7px 5px;
+  border-radius: 2px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: var(--type-label);
+  line-height: 1;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 7px));
+  white-space: nowrap;
+}
+
+.scrub-tooltip[hidden] {
+  display: none;
+}
+
+.scrub-tooltip::after {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  border: 4px solid transparent;
+  border-top-color: var(--ink);
+  content: "";
+  transform: translateX(-50%);
+}
+
 .portfolio-rule {
   position: relative;
   margin: var(--space-exploration) 0;

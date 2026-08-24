@@ -24,6 +24,7 @@ const values = {
 };
 
 const inputs = [...document.querySelectorAll("input[data-key]")];
+const inputsByKey = new Map(inputs.map((input) => [input.dataset.key, input]));
 const scenarioButtons = [...document.querySelectorAll("[data-scenario]")];
 const inputBounds = Object.fromEntries(
   inputs.map((input) => [
@@ -82,13 +83,14 @@ const staticEquations = {
   "tradeoff-equation": String.raw`\underbrace{\pi(\mu-r)}_{\text{expected reward}}-\underbrace{\frac{1}{2}\gamma\pi^2\sigma^2}_{\text{risk penalty}}`,
 };
 
-function renderLatex(id, expression) {
+function renderLatex(id, expression, options = {}) {
   const element = document.getElementById(id);
   if (!element) return;
   katex.render(expression, element, {
     displayMode: true,
     throwOnError: false,
     strict: "ignore",
+    ...options,
   });
 }
 
@@ -104,6 +106,10 @@ function latexValue(value) {
 
 function dynamicLatex(value) {
   return String.raw`\textcolor{${DYNAMIC_COLOR}}{${latexValue(value)}}`;
+}
+
+function adjustableLatex(key, value) {
+  return String.raw`\htmlData{parameter=${key}}{${latexValue(value)}}`;
 }
 
 function dynamicText(value) {
@@ -576,6 +582,146 @@ function activeScenario() {
   )?.[0];
 }
 
+const mertonEquation = document.getElementById("merton-equation");
+const scrubTooltip = document.getElementById("scrub-tooltip");
+const scrubTooltipLabel = document.getElementById("scrub-tooltip-label");
+const parameterNames = {
+  mu: "Expected return",
+  r: "Risk-free rate",
+  sigma: "Volatility",
+  gamma: "Risk aversion",
+};
+const parameterSymbols = {
+  mu: "μ",
+  r: "r",
+  sigma: "σ",
+  gamma: "γ",
+};
+let scrubState;
+
+function parameterFormat(key, value) {
+  return key === "gamma" ? decimal.format(value) : ratePercent.format(value);
+}
+
+function parameterElement(target, clientX, clientY) {
+  const directElement = target instanceof Element ? target.closest("[data-parameter]") : undefined;
+  if (directElement && mertonEquation?.contains(directElement)) return directElement;
+  if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return undefined;
+
+  for (const layer of document.elementsFromPoint(clientX, clientY)) {
+    const element = layer.closest("[data-parameter]");
+    if (element && mertonEquation?.contains(element)) return element;
+  }
+  return undefined;
+}
+
+function decorateAdjustableNumbers() {
+  for (const element of mertonEquation?.querySelectorAll("[data-parameter]") ?? []) {
+    const key = element.dataset.parameter;
+    const input = inputsByKey.get(key);
+    if (!input) continue;
+
+    element.setAttribute(
+      "aria-label",
+      `${parameterNames[key]}: ${parameterFormat(key, values[key])}. Drag to adjust.`,
+    );
+  }
+}
+
+function showScrubTooltip(element) {
+  if (!scrubTooltip || !element) return;
+  const key = element.dataset.parameter;
+  const bounds = element.getBoundingClientRect();
+  if (scrubTooltipLabel) scrubTooltipLabel.textContent = `${parameterSymbols[key]} ${parameterNames[key]}`;
+  scrubTooltip.style.left = `${bounds.left + bounds.width / 2}px`;
+  scrubTooltip.style.top = `${bounds.top}px`;
+  scrubTooltip.hidden = false;
+}
+
+function hideScrubTooltip() {
+  if (scrubTooltip) scrubTooltip.hidden = true;
+}
+
+function steppedValue(input, candidate) {
+  const minimum = Number(input.min);
+  const maximum = Number(input.max);
+  const step = Number(input.step);
+  const clamped = Math.min(maximum, Math.max(minimum, candidate));
+  const stepped = minimum + Math.round((clamped - minimum) / step) * step;
+  return Number(stepped.toFixed(8));
+}
+
+function setParameterValue(key, candidate) {
+  const input = inputsByKey.get(key);
+  if (!input) return;
+  const nextValue = steppedValue(input, candidate);
+  if (nextValue === values[key]) return;
+  values[key] = nextValue;
+  render();
+}
+
+function finishScrub() {
+  scrubState = undefined;
+  document.documentElement.classList.remove("is-scrubbing");
+  hideScrubTooltip();
+}
+
+mertonEquation?.addEventListener("pointermove", (event) => {
+  if (scrubState) return;
+  const element = parameterElement(event.target, event.clientX, event.clientY);
+  mertonEquation.classList.toggle("is-parameter-hovered", Boolean(element));
+  if (element) showScrubTooltip(element);
+  else hideScrubTooltip();
+});
+
+mertonEquation?.addEventListener("pointerleave", () => {
+  if (scrubState) return;
+  mertonEquation.classList.remove("is-parameter-hovered");
+  hideScrubTooltip();
+});
+
+mertonEquation?.addEventListener("pointerdown", (event) => {
+  const element = parameterElement(event.target, event.clientX, event.clientY);
+  if (!element || (event.button !== undefined && event.button !== 0)) return;
+
+  const key = element.dataset.parameter;
+  const input = inputsByKey.get(key);
+  if (!input) return;
+
+  event.preventDefault();
+  scrubState = {
+    key,
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startValue: values[key],
+    width: Math.max(input.getBoundingClientRect().width, 1),
+  };
+  document.documentElement.classList.add("is-scrubbing");
+  showScrubTooltip(element);
+});
+
+window.addEventListener("pointermove", (event) => {
+  if (!scrubState || event.pointerId !== scrubState.pointerId) return;
+  const input = inputsByKey.get(scrubState.key);
+  if (!input) return;
+
+  event.preventDefault();
+  const range = Number(input.max) - Number(input.min);
+  const candidate = scrubState.startValue + ((event.clientX - scrubState.startX) / scrubState.width) * range;
+  setParameterValue(scrubState.key, candidate);
+  showScrubTooltip(mertonEquation?.querySelector(`[data-parameter="${scrubState.key}"]`));
+});
+
+window.addEventListener("pointerup", (event) => {
+  if (scrubState && event.pointerId === scrubState.pointerId) finishScrub();
+});
+
+window.addEventListener("pointercancel", (event) => {
+  if (scrubState && event.pointerId === scrubState.pointerId) finishScrub();
+});
+
+window.addEventListener("blur", finishScrub);
+
 function updateControlContext() {
   const focusLine = window.innerHeight * 0.38;
   const activeSection = contextualSections.find((section) => {
@@ -619,8 +765,10 @@ function render() {
   document.getElementById("rail-share").textContent = allocationPercent.format(share);
   renderLatex(
     "merton-equation",
-    String.raw`\underbrace{\pi^*(W,t)}_{\text{optimal risky share}}=\frac{\mu-r}{\sigma^2\gamma}=\frac{${dynamicLatex(ratePercent.format(values.mu))}-${dynamicLatex(ratePercent.format(values.r))}}{\left(${dynamicLatex(ratePercent.format(values.sigma))}\right)^2\!\cdot${dynamicLatex(decimal.format(values.gamma))}}=${dynamicLatex(allocationPercent.format(share))}`,
+    String.raw`\underbrace{\pi^*(W,t)}_{\text{optimal risky share}}=\frac{\mu-r}{\sigma^2\gamma}=\frac{${adjustableLatex("mu", ratePercent.format(values.mu))}-${adjustableLatex("r", ratePercent.format(values.r))}}{\left(${adjustableLatex("sigma", ratePercent.format(values.sigma))}\right)^2\!\cdot${adjustableLatex("gamma", decimal.format(values.gamma))}}=${dynamicLatex(allocationPercent.format(share))}`,
+    { trust: true },
   );
+  decorateAdjustableNumbers();
   renderLiveSentence("allocation-sentence", ...allocationDescription(share));
   renderLatex(
     "portfolio-return-equation",
