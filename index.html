@@ -15,10 +15,12 @@
     <main>
       <article class="notebook">
         <aside class="controls-rail" aria-label="Optimal risky share">
-          <div class="rail-heading">Optimal risky share</div>
-          <div class="rail-result" aria-live="polite">
-            <strong><i>π</i><sup>∗</sup> = <span id="rail-share"></span></strong>
-          </div>
+          <a class="rail-result-link" href="#portfolio-rule" aria-label="Jump to the closed-form portfolio rule">
+            <div class="rail-heading">Optimal risky share</div>
+            <div class="rail-result" aria-live="polite">
+              <strong><i>π</i><sup>∗</sup> = <span id="rail-share"></span></strong>
+            </div>
+          </a>
           <div class="controls">
             <label class="control" data-control="mu">
               <span class="control-heading">
@@ -26,7 +28,7 @@
                 <output id="mu-output"></output>
               </span>
               <span class="control-description">
-                Risky asset · annualized
+                Annualized return on the risky asset
               </span>
               <input aria-label="Expected return" data-key="mu" type="range" min="0" max="0.15" step="0.0025" />
             </label>
@@ -37,7 +39,7 @@
                 <output id="r-output"></output>
               </span>
               <span class="control-description">
-                Continuously compounded cash return
+                Continuously compounded risk-free return
               </span>
               <input aria-label="Risk-free rate" data-key="r" type="range" min="0" max="0.08" step="0.0025" />
             </label>
@@ -48,7 +50,7 @@
                 <output id="sigma-output"></output>
               </span>
               <span class="control-description">
-                Annualized standard deviation · 10–25% typical
+                Annualized volatility of the risky asset
               </span>
               <input aria-label="Volatility" data-key="sigma" type="range" min="0.05" max="0.5" step="0.005" />
             </label>
@@ -59,13 +61,13 @@
                 <output id="gamma-output"></output>
               </span>
               <span class="control-description">
-                Higher values mean greater risk aversion
+                Investor’s aversion to risk
               </span>
               <input aria-label="Risk aversion" data-key="gamma" type="range" min="0.5" max="10" step="0.25" />
             </label>
           </div>
 
-          <div class="scenario-heading">Scenarios</div>
+          <div class="scenario-heading">Example scenarios</div>
           <div class="scenario-row" aria-label="Example scenarios">
             <button
               type="button"
@@ -77,8 +79,8 @@
               data-gamma="3"
             >
               <span class="scenario-title">Current global equities</span>
-              <span class="scenario-description">VT against 3-month Treasury bills, using August 2026 inputs.</span>
               <span class="scenario-values"></span>
+              <span class="scenario-description">VT against 3-month Treasury bills, using August 2026 inputs.</span>
             </button>
             <button
               type="button"
@@ -90,8 +92,8 @@
               data-gamma="6"
             >
               <span class="scenario-title">Higher risk aversion</span>
-              <span class="scenario-description">The same market, but twice the baseline value of <i>γ</i>.</span>
               <span class="scenario-values"></span>
+              <span class="scenario-description">The same market, but twice the baseline value of <i>γ</i>.</span>
             </button>
             <button
               type="button"
@@ -103,8 +105,8 @@
               data-gamma="3"
             >
               <span class="scenario-title">Volatility shock</span>
-              <span class="scenario-description">The same outlook, with volatility alone rising to a stressed level.</span>
               <span class="scenario-values"></span>
+              <span class="scenario-description">The same outlook, with volatility alone rising to a stressed level.</span>
             </button>
             <button
               type="button"
@@ -116,8 +118,8 @@
               data-gamma="3"
             >
               <span class="scenario-title">Low-rate regime</span>
-              <span class="scenario-description">The same equity outlook when cash offers much less competition.</span>
               <span class="scenario-values"></span>
+              <span class="scenario-description">The same equity outlook when cash offers much less competition.</span>
             </button>
             <button
               type="button"
@@ -129,8 +131,8 @@
               data-gamma="3"
             >
               <span class="scenario-title">Historical-return extrapolation</span>
-              <span class="scenario-description">A backward-looking return assumption pushes the unconstrained rule past 100%.</span>
               <span class="scenario-values"></span>
+              <span class="scenario-description">A backward-looking return assumption pushes the unconstrained rule past 100%.</span>
             </button>
           </div>
         </aside>

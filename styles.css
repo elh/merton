@@ -19,7 +19,6 @@
   --type-symbol: 14px;
   --type-small: 11.5px;
   --type-label: 10.5px;
-  --type-micro: 9.5px;
   --type-formula: 1rem;
   --type-formula-emphasis: 1.06rem;
   --type-formula-compact: 0.95rem;
@@ -233,7 +232,8 @@ html.is-scrubbing * {
 .portfolio-rule {
   position: relative;
   margin: var(--space-exploration) 0;
-  padding: var(--space-tight) var(--space-block) var(--space-tight) 0;
+  padding: var(--space-tight) var(--space-block);
+  border-left: 4px solid var(--dynamic);
   border-right: 4px solid var(--dynamic);
   scroll-margin-top: var(--space-exploration);
 }
@@ -242,9 +242,14 @@ html.is-scrubbing * {
 .portfolio-rule::after {
   position: absolute;
   right: -4px;
-  width: 14px;
+  left: -4px;
   height: 4px;
-  background: var(--dynamic);
+  background: linear-gradient(
+    to right,
+    var(--dynamic) 0 14px,
+    transparent 14px calc(100% - 14px),
+    var(--dynamic) calc(100% - 14px) 100%
+  );
   content: "";
 }
 
@@ -284,6 +289,15 @@ html.is-scrubbing * {
 
 .rail-heading {
   margin-bottom: 7px;
+}
+
+.rail-result-link {
+  display: block;
+  color: inherit;
+}
+
+.rail-result-link:hover {
+  text-decoration: none;
 }
 
 .rail-result {
@@ -357,7 +371,7 @@ html.is-scrubbing * {
   display: block;
   margin: 2px 0 5px;
   color: var(--muted);
-  font-size: var(--type-micro);
+  font-size: var(--type-label);
   line-height: var(--leading-dense);
 }
 
@@ -367,7 +381,7 @@ input[type="range"] {
   margin: 0;
   appearance: none;
   background: transparent;
-  cursor: pointer;
+  cursor: col-resize;
 }
 
 input[type="range"]::-webkit-slider-runnable-track {
@@ -380,13 +394,13 @@ input[type="range"]::-webkit-slider-runnable-track {
 }
 
 input[type="range"]::-webkit-slider-thumb {
-  width: 10px;
-  height: 10px;
-  margin-top: -4px;
+  width: 6px;
+  height: 6px;
+  margin-top: -2px;
   appearance: none;
-  border: 1.5px solid var(--dynamic);
+  border: 0;
   border-radius: 50%;
-  background: var(--paper);
+  background: var(--dynamic);
 }
 
 input[type="range"]::-moz-range-track {
@@ -400,11 +414,11 @@ input[type="range"]::-moz-range-progress {
 }
 
 input[type="range"]::-moz-range-thumb {
-  width: 8px;
-  height: 8px;
-  border: 1.5px solid var(--dynamic);
+  width: 6px;
+  height: 6px;
+  border: 0;
   border-radius: 50%;
-  background: var(--paper);
+  background: var(--dynamic);
 }
 
 .scenario-heading {
@@ -436,7 +450,7 @@ input[type="range"]::-moz-range-thumb {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--line);
+  background: transparent;
   content: "";
 }
 
@@ -463,17 +477,17 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .scenario-description {
-  margin-top: 1px;
+  margin-top: 2px;
   color: var(--muted);
-  font-size: var(--type-micro);
+  font-size: var(--type-label);
   line-height: var(--leading-dense);
 }
 
 .scenario-values {
-  margin-top: 2px;
+  margin-top: 1px;
   color: var(--muted);
   font-family: var(--mono);
-  font-size: var(--type-micro);
+  font-size: var(--type-label);
   line-height: var(--leading-dense);
   font-variant-numeric: tabular-nums;
 }
@@ -710,6 +724,8 @@ input[type="range"]::-moz-range-thumb {
   }
 
   .controls-rail {
+    --type-rail-mobile: 13px;
+
     position: static;
     order: 2;
     width: 100%;
@@ -718,6 +734,21 @@ input[type="range"]::-moz-range-thumb {
     padding: 40px 0 0;
     border-top: 1px solid var(--line);
     overflow: visible;
+  }
+
+  .rail-heading,
+  .scenario-heading,
+  .control-heading > span,
+  .control-heading output,
+  .control-description,
+  .scenario-title,
+  .scenario-description,
+  .scenario-values {
+    font-size: var(--type-rail-mobile);
+  }
+
+  .control-heading > span > i {
+    font-size: var(--type-body);
   }
 
   .controls {
@@ -744,6 +775,10 @@ input[type="range"]::-moz-range-thumb {
     grid-template-columns: 1fr;
   }
 
+  .tex-equation {
+    padding-bottom: var(--space-tight);
+  }
+
   .formula-rules {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
@@ -751,5 +786,9 @@ input[type="range"]::-moz-range-thumb {
 
   .math-display {
     font-size: var(--type-formula-mobile);
+  }
+
+  .portfolio-rule {
+    padding-inline: var(--space-tight);
   }
 }
