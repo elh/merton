@@ -35,6 +35,7 @@
   --space-exploration: 28px;
   --space-subsection: 34px;
   --space-section: 40px;
+  --height-wealth-fan: 180px;
   font-family: var(--serif);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -124,12 +125,6 @@ main {
 
 .dynamic-text {
   color: var(--dynamic);
-}
-
-.formula-focus-note {
-  color: var(--muted);
-  font-size: var(--type-small);
-  line-height: var(--leading-small);
 }
 
 .article-copy .source-note {
@@ -498,10 +493,6 @@ input[type="range"]::-moz-range-thumb {
   color: var(--dynamic);
 }
 
-.integrated-model {
-  margin: var(--space-block) 0 var(--space-exploration);
-}
-
 .callout-note {
   max-width: 610px;
   color: var(--muted);
@@ -509,30 +500,18 @@ input[type="range"]::-moz-range-thumb {
   line-height: var(--leading-small);
 }
 
-.live-value {
-  color: var(--dynamic);
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.decomposition-equation {
-  margin: var(--space-block) 0;
-  padding-bottom: 4px;
-  font-size: var(--type-formula);
-}
-
-#utility-chart,
+#wealth-fan-chart,
 .sensitivity-chart {
   display: block;
   width: 100%;
   height: auto;
 }
 
-#utility-chart {
-  margin-bottom: 0;
+#wealth-fan-chart {
+  height: var(--height-wealth-fan);
 }
 
-.utility-figure,
+.wealth-fan-figure,
 .sensitivity-figure {
   margin: var(--space-block) 0 var(--space-copy);
 }
@@ -544,43 +523,14 @@ input[type="range"]::-moz-range-thumb {
   line-height: var(--leading-small);
 }
 
+.article-copy .wealth-fan-summary {
+  margin: var(--space-tight) 0 0;
+}
+
 .live-number {
   color: var(--dynamic);
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
-}
-
-.experiment-metrics {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px 26px;
-  margin: 0 0 var(--space-copy);
-}
-
-.experiment-metrics dt {
-  order: 2;
-  margin-top: 2px;
-  color: var(--muted);
-  font-size: var(--type-small);
-  line-height: var(--leading-dense);
-}
-
-.experiment-metrics dd {
-  order: 1;
-  margin: 0;
-  color: var(--ink);
-  font-family: var(--mono);
-  font-size: var(--type-subheading);
-  font-variant-numeric: tabular-nums;
-}
-
-.experiment-metrics > div {
-  display: flex;
-  flex-direction: column;
-}
-
-.experiment-metrics dd.live-number {
-  color: var(--dynamic);
 }
 
 .allocation-sentence {
@@ -663,42 +613,6 @@ input[type="range"]::-moz-range-thumb {
   margin: 10px 0 7px;
 }
 
-.formula-rules {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-block);
-  margin-top: var(--space-block);
-}
-
-.formula-rules p {
-  margin: 0;
-}
-
-.formula-rules strong {
-  display: block;
-  margin-bottom: 2px;
-  color: var(--ink);
-  font-family: var(--mono);
-  font-size: var(--type-subheading);
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-}
-
-#return-sensitivity {
-  color: var(--dynamic);
-}
-
-.formula-rules span {
-  display: block;
-  color: var(--muted);
-  font-size: var(--type-small);
-  line-height: var(--leading-dense);
-}
-
-.article-copy .constraint-introduction {
-  margin-top: var(--space-exploration);
-}
-
 .constraint-equation {
   margin: var(--space-copy) 0 var(--space-tight);
   padding-bottom: 3px;
@@ -707,6 +621,10 @@ input[type="range"]::-moz-range-thumb {
 }
 
 @media (max-width: 720px) {
+  :root {
+    --height-wealth-fan: 150px;
+  }
+
   main {
     padding: 20px 18px 44px;
   }
@@ -766,7 +684,6 @@ input[type="range"]::-moz-range-thumb {
 
 @media (max-width: 480px) {
   .controls,
-  .experiment-metrics,
   .solution-implications {
     grid-template-columns: 1fr;
   }
@@ -777,11 +694,6 @@ input[type="range"]::-moz-range-thumb {
 
   .tex-equation {
     padding-bottom: var(--space-tight);
-  }
-
-  .formula-rules {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
   }
 
   .math-display {

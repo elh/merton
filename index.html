@@ -150,14 +150,14 @@
           </p>
 
           <p>
-            We will state the full problem, then focus on how its continuous-time machinery collapses into
-            an <a href="#portfolio-rule"><strong>elegantly simple rule</strong> ↓</a> for sizing the risky asset.
+            For completeness, we will state the full continuous-time problem, then focus on the
+            <a href="#portfolio-rule"><strong>simple equation</strong> ↓</a> it produces for optimally sizing the risky asset.
           </p>
 
           <p>
             This site is inspired by
             <a href="https://worrydream.com/ExplorableExplanations/">Bret Victor's “Explorable Explanations”</a>.
-            Values shown in <span class="dynamic-text">red</span> update dynamically with the variables in the right rail.
+            Values shown in <span class="dynamic-text">red</span> update dynamically with the controls.
           </p>
 
           <section aria-labelledby="problem-statement">
@@ -179,12 +179,9 @@
             <div class="math-display tex-equation" id="objective-equation" aria-label="Maximize expected discounted utility of consumption and terminal wealth"></div>
 
             <p>
-              where <i>E</i> is the <a href="https://en.wikipedia.org/wiki/Expected_value">expectation operator</a>,
-              <i>u</i> is a known <a href="https://en.wikipedia.org/wiki/Utility">utility function</a>
-              (which applies both to consumption and to the terminal wealth, or
-              <a href="https://en.wikipedia.org/wiki/Bequest_motive">bequest</a>, <i>W</i><sub>T</sub>),
-              <i>ε</i> parameterizes the desired level of bequest, <i>ρ</i> is the subjective discount rate,
-              and <i>γ</i> measures the investor's
+              Here <i>u</i> is the <a href="https://en.wikipedia.org/wiki/Utility">utility function</a>,
+              <i>ρ</i> discounts future utility, <i>ε</i> weights utility from terminal wealth
+              <i>W</i><sub>T</sub>, and <i>γ</i> measures the investor's
               <a href="https://en.wikipedia.org/wiki/Risk_aversion">risk aversion</a>.
             </p>
 
@@ -215,56 +212,16 @@
               (CRRA) form:
             </p>
 
-            <div class="math-display tex-equation" id="utility-equation" aria-label="CRRA utility function"></div>
-
-            <p class="formula-focus-note">
-              At <i>γ</i> = 1, the limiting form is <i>u</i>(<i>x</i>) = log <i>x</i>.
-            </p>
-
-            <div class="integrated-model utility-model" data-uses="gamma">
-              <p>
-                The parameter <i>γ</i> controls the curvature of utility. Consider a 50–50 chance of ending with
-                $75 or $125. Its expected wealth is $100, but a risk-averse investor values the gamble like a
-                smaller certain amount. The same <i>γ</i> appears in the denominator of the allocation rule below:
-                greater curvature produces a smaller risky-position magnitude.
-              </p>
-
-              <figure class="utility-figure">
-                <canvas
-                  id="utility-chart"
-                  width="1280"
-                  height="280"
-                  role="img"
-                  aria-label="CRRA utility over wealth from 50 to 150 dollars"
-                ></canvas>
-                <figcaption class="figure-caption">
-                  CRRA utility at <i>γ</i> = <span class="live-number" id="utility-gamma"></span>.
-                  The highlighted point is the
-                  <a href="https://en.wikipedia.org/wiki/Certainty_equivalent">certainty equivalent</a>.
-                </figcaption>
-              </figure>
-
-              <dl class="experiment-metrics">
-                <div>
-                  <dt>Expected wealth</dt>
-                  <dd>$100</dd>
-                </div>
-                <div>
-                  <dt>Certainty equivalent</dt>
-                  <dd class="live-number" id="certainty-equivalent"></dd>
-                </div>
-              </dl>
-
-              <p class="callout-note" id="utility-explanation" aria-live="polite"></p>
-            </div>
+            <div class="math-display tex-equation" id="utility-equation" data-uses="gamma" aria-label="CRRA utility function"></div>
 
             <p>
-              Consumption must remain nonnegative: <i>c</i><sub>t</sub> ≥ 0.
+              In this form, greater <i>γ</i> means greater relative risk aversion. Because <i>γ</i> appears in the
+              denominator of the allocation rule below, a more risk-averse investor holds a smaller risky position.
             </p>
           </section>
 
-          <section data-uses="mu r sigma gamma" aria-labelledby="solution">
-            <h2 id="solution">Solution</h2>
+          <section data-uses="mu r sigma gamma" aria-labelledby="optimal-allocation">
+            <h2 id="optimal-allocation">Optimal allocation</h2>
 
             <p>
               The portfolio choice balances reward against risk. Investing a fraction <i>π</i> in the risky asset
@@ -275,10 +232,6 @@
             </p>
 
             <div class="tradeoff-equation tex-equation tex-left" id="tradeoff-equation"></div>
-
-            <p>
-              The reward is linear in <i>π</i>; the risk penalty is quadratic.
-            </p>
 
             <figure class="tradeoff-figure">
               <svg class="tradeoff-chart" viewBox="0 0 740 220" role="img" aria-labelledby="tradeoff-title tradeoff-description">
@@ -314,13 +267,17 @@
             </div>
 
             <p>
-              This allocation determines two instantaneous portfolio statistics. Expected return starts with the
-              risk-free return earned by all wealth, then adds
-              <i>π</i><sup>∗</sup> times the risky asset's
-              <a href="https://en.wikipedia.org/wiki/Risk_premium">excess return</a> <i>μ</i> − <i>r</i>.
-              Volatility comes only from the risky position, so the risky asset's
-              volatility <i>σ</i> is scaled by |<i>π</i><sup>∗</sup>|; the absolute value keeps volatility
-              nonnegative when the position is short.
+              The allocation rule above is commonly referred to as Merton's fraction. Its key intuitions are
+              visible directly in the equation: more excess return increases the risky share, more risk aversion
+              reduces it, and doubling volatility quarters the share. Neither <i>W</i> nor <i>t</i> appears on the
+              right-hand side, so under the model's assumptions the investor maintains the same risky-asset
+              fraction regardless of current wealth or remaining horizon. The dollar position changes with
+              wealth; the proportion does not.
+            </p>
+
+            <h3>Portfolio implications</h3>
+            <p>
+              Once <i>π</i><sup>∗</sup> is known, the portfolio's expected return and volatility follow directly:
             </p>
 
             <div class="solution-implications">
@@ -338,27 +295,25 @@
               ></div>
             </div>
 
-            <p>
-              The allocation rule above is commonly referred to as Merton's fraction. Neither <i>W</i> nor <i>t</i>
-              appears on the right-hand side, so under the model's assumptions the investor maintains the
-              same risky-asset fraction regardless of current wealth or remaining horizon. The dollar position
-              changes with wealth; the proportion does not.
-            </p>
-
-            <h3>Wealth dynamics</h3>
-            <p>
-              Substituting <i>π</i><sup>∗</sup> back into the wealth equation translates the allocation into
-              expected growth and random variation. At <i>W</i> = $100 with consumption set to zero, the
-              coefficients of <i>dt</i> and <i>dB</i><sub>t</sub> give the expected change per year and the scale of random change:
-            </p>
-
-            <div class="decomposition-equation tex-equation tex-left" id="decomposition-equation" aria-live="polite"></div>
-
-            <p class="callout-note">
-              With <i>π</i><sup>∗</sup> = <span class="live-value" id="wealth-share"></span>, the scale of random change is
-              <span class="live-value" id="wealth-volatility"></span> per square-root year; uncertainty over a short
-              interval <i>Δt</i> grows with √<i>Δt</i>, not <i>Δt</i>.
-            </p>
+            <figure class="wealth-fan-figure">
+              <canvas
+                id="wealth-fan-chart"
+                width="1280"
+                height="340"
+                role="img"
+                aria-label="Ten-year fan chart showing model-implied median wealth and fifty and ninety percent ranges for one hundred dollars invested at the optimal share"
+              ></canvas>
+              <p class="wealth-fan-summary" aria-live="polite">
+                After 10 years, median wealth is <span class="live-number" id="wealth-fan-median"></span>,
+                with a 50% range of <span class="live-number" id="wealth-fan-lower-50"></span>–<span class="live-number" id="wealth-fan-upper-50"></span>
+                and a 90% range of <span class="live-number" id="wealth-fan-lower-90"></span>–<span class="live-number" id="wealth-fan-upper-90"></span>.
+              </p>
+              <figcaption class="figure-caption">
+                Illustrative growth of $100 over 10 years at the optimal share. Model-implied 50% and 90% ranges
+                assume constant inputs, continuous rebalancing, and no consumption, cash flows, fees, taxes, or
+                inflation; they are not forecasts.
+              </figcaption>
+            </figure>
 
             <h3>Comparative statics</h3>
             <p>
@@ -383,13 +338,8 @@
               </figcaption>
             </figure>
 
-            <div class="formula-rules">
-              <p><strong id="return-sensitivity"></strong><span>added to the risky share for each 1 pp increase in excess return</span></p>
-              <p><strong>¼×</strong><span>the risky share when volatility doubles</span></p>
-              <p><strong>½×</strong><span>the risky share when risk aversion doubles</span></p>
-            </div>
-
-            <p class="constraint-introduction">
+            <h3>Portfolio constraints</h3>
+            <p>
               Merton's fraction is unconstrained. If borrowing and shorting are prohibited, both asset weights
               must remain between 0% and 100%, so the solution is clipped to that interval:
             </p>

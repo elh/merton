@@ -15,6 +15,7 @@ const CHART_FONT = Object.freeze({
   title: `${cssToken("--type-heading")} ${SERIF_FONT}`,
   annotation: `${cssToken("--type-subheading")} ${SERIF_FONT}`,
 });
+const FAN_CHART_FONT = `${cssToken("--type-small")} ${SERIF_FONT}`;
 
 const values = {
   mu: 0.05,
@@ -50,14 +51,17 @@ const decimal = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2,
 });
 
-const percentagePoints = new Intl.NumberFormat("en-US", {
-  maximumFractionDigits: 1,
-});
-
 const money = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
   minimumFractionDigits: 0,
+  maximumFractionDigits: 1,
+});
+
+const compactMoney = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  notation: "compact",
   maximumFractionDigits: 1,
 });
 
@@ -129,21 +133,6 @@ function renderLiveSentence(id, ...parts) {
 
 function riskyShare() {
   return (values.mu - values.r) / (values.gamma * values.sigma ** 2);
-}
-
-function normalizedUtility(wealth, gamma = values.gamma) {
-  const relativeWealth = wealth / 100;
-  if (Math.abs(gamma - 1) < 0.00001) {
-    return Math.log(relativeWealth);
-  }
-  return (relativeWealth ** (1 - gamma) - 1) / (1 - gamma);
-}
-
-function certaintyEquivalent(low, high, gamma = values.gamma) {
-  if (Math.abs(gamma - 1) < 0.00001) {
-    return Math.sqrt(low * high);
-  }
-  return (0.5 * low ** (1 - gamma) + 0.5 * high ** (1 - gamma)) ** (1 / (1 - gamma));
 }
 
 function allocationDescription(share) {
@@ -272,78 +261,133 @@ function renderChart(optimalShare) {
   }
 }
 
-function renderUtilityChart() {
-  const canvas = document.getElementById("utility-chart");
+function renderWealthFanChart(portfolioReturn, portfolioVolatility) {
+  const canvas = document.getElementById("wealth-fan-chart");
   if (!canvas) return;
 
-  const context = canvas.getContext("2d");
-  const width = canvas.width;
-  const height = canvas.height;
-  const plot = { left: 44, right: width - 24, top: 10, bottom: height - 58 };
-  const samples = Array.from({ length: 161 }, (_, index) => {
-    const wealth = 50 + (index / 160) * 100;
-    return { wealth, utility: normalizedUtility(wealth) };
-  });
-  const expectedUtility = 0.5 * normalizedUtility(75) + 0.5 * normalizedUtility(125);
-  const equivalent = certaintyEquivalent(75, 125);
-  const utilities = [...samples.map(({ utility }) => utility), expectedUtility, 0];
-  let minimum = Math.min(...utilities);
-  let maximum = Math.max(...utilities);
-  const padding = Math.max((maximum - minimum) * 0.12, 0.02);
-  minimum -= padding;
-  maximum += padding;
+  const width = canvas.clientWidth;
+  const height = canvas.clientHeight;
+  const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+  const backingWidth = Math.round(width * pixelRatio);
+  const backingHeight = Math.round(height * pixelRatio);
+  if (canvas.width !== backingWidth || canvas.height !== backingHeight) {
+    canvas.width = backingWidth;
+    canvas.height = backingHeight;
+  }
 
-  const x = (wealth) => plot.left + ((wealth - 50) / 100) * (plot.right - plot.left);
-  const y = (utility) => plot.bottom - ((utility - minimum) / (maximum - minimum)) * (plot.bottom - plot.top);
+  const context = canvas.getContext("2d");
+  context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  const plot = { left: 42, right: width - 8, top: 30, bottom: height - 38 };
+  const initialWealth = 100;
+  const horizon = 10;
+  const z50 = 0.67448975;
+  const z90 = 1.64485363;
+  const drift = portfolioReturn - 0.5 * portfolioVolatility ** 2;
+  const projectedWealth = (year, zScore) =>
+    initialWealth * Math.exp(drift * year + zScore * portfolioVolatility * Math.sqrt(year));
+  const samples = Array.from({ length: 121 }, (_, index) => {
+    const year = (index / 120) * horizon;
+    return {
+      year,
+      median: projectedWealth(year, 0),
+      lower50: projectedWealth(year, -z50),
+      upper50: projectedWealth(year, z50),
+      lower90: projectedWealth(year, -z90),
+      upper90: projectedWealth(year, z90),
+    };
+  });
+  const terminalSample = samples.at(-1);
+  document.getElementById("wealth-fan-median").textContent = money.format(terminalSample.median);
+  document.getElementById("wealth-fan-lower-50").textContent = money.format(terminalSample.lower50);
+  document.getElementById("wealth-fan-upper-50").textContent = money.format(terminalSample.upper50);
+  document.getElementById("wealth-fan-lower-90").textContent = money.format(terminalSample.lower90);
+  document.getElementById("wealth-fan-upper-90").textContent = money.format(terminalSample.upper90);
+  const maximumWealth = Math.max(initialWealth, ...samples.map(({ upper90 }) => upper90));
+  const magnitude = 10 ** Math.floor(Math.log10(maximumWealth * 1.05));
+  const scaledMaximum = (maximumWealth * 1.05) / magnitude;
+  const niceStep = [1, 1.25, 1.5, 2, 2.5, 5, 10].find((step) => step >= scaledMaximum) ?? 10;
+  const yMaximum = niceStep * magnitude;
+  const x = (year) => plot.left + (year / horizon) * (plot.right - plot.left);
+  const y = (wealth) => plot.bottom - (wealth / yMaximum) * (plot.bottom - plot.top);
 
   context.clearRect(0, 0, width, height);
   context.lineCap = "round";
   context.lineJoin = "round";
+  context.font = FAN_CHART_FONT;
 
-  context.strokeStyle = LINE_COLOR;
-  context.lineWidth = 2;
-  context.beginPath();
-  context.moveTo(plot.left, y(0));
-  context.lineTo(plot.right, y(0));
-  context.stroke();
-
+  context.strokeStyle = SOFT_LINE_COLOR;
+  context.lineWidth = 1;
   context.fillStyle = MUTED_COLOR;
-  context.font = CHART_FONT.annotation;
-  context.textBaseline = "top";
-  for (const tick of [50, 100, 150]) {
-    context.textAlign = tick === 50 ? "left" : tick === 150 ? "right" : "center";
-    context.fillText(`$${tick}`, x(tick), plot.bottom + 11);
+  context.textBaseline = "middle";
+  context.textAlign = "right";
+  for (const tick of [0, yMaximum / 2, yMaximum]) {
+    const tickY = y(tick);
+    context.beginPath();
+    context.moveTo(plot.left, tickY);
+    context.lineTo(plot.right, tickY);
+    context.stroke();
+    context.fillText(compactMoney.format(tick), plot.left - 6, tickY);
   }
 
-  context.font = CHART_FONT.annotation;
-  context.textAlign = "center";
-  context.fillText("wealth, W", (plot.left + plot.right) / 2, plot.bottom + 35);
+  const fillBand = (lowerKey, upperKey, color) => {
+    context.fillStyle = color;
+    context.beginPath();
+    samples.forEach((sample, index) => {
+      const command = index === 0 ? "moveTo" : "lineTo";
+      context[command](x(sample.year), y(sample[upperKey]));
+    });
+    [...samples].reverse().forEach((sample) => {
+      context.lineTo(x(sample.year), y(sample[lowerKey]));
+    });
+    context.closePath();
+    context.fill();
+  };
 
-  context.strokeStyle = INK_COLOR;
-  context.lineWidth = 4;
+  fillBand("lower90", "upper90", CHART_BAND_COLOR);
+  fillBand("lower50", "upper50", SOFT_LINE_COLOR);
+
+  context.strokeStyle = DYNAMIC_COLOR;
+  context.lineWidth = 1.5;
   context.beginPath();
-  samples.forEach(({ wealth, utility }, index) => {
-    if (index === 0) context.moveTo(x(wealth), y(utility));
-    else context.lineTo(x(wealth), y(utility));
+  samples.forEach((sample, index) => {
+    const command = index === 0 ? "moveTo" : "lineTo";
+    context[command](x(sample.year), y(sample.median));
   });
   context.stroke();
 
-  const equivalentX = x(equivalent);
-  const equivalentY = y(expectedUtility);
-  context.save();
-  context.setLineDash([7, 8]);
-  context.strokeStyle = DYNAMIC_COLOR;
-  context.lineWidth = 2;
-  context.beginPath();
-  context.moveTo(equivalentX, equivalentY);
-  context.lineTo(equivalentX, plot.bottom);
-  context.stroke();
-  context.restore();
+  context.fillStyle = MUTED_COLOR;
+  context.textBaseline = "top";
+  for (const year of [0, 2, 4, 6, 8, 10]) {
+    context.textAlign = year === 0 ? "left" : year === 10 ? "right" : "center";
+    context.fillText(String(year), x(year), plot.bottom + 5);
+  }
+  context.textAlign = "center";
+  context.fillText("years", (plot.left + plot.right) / 2, plot.bottom + 20);
 
-  context.fillStyle = DYNAMIC_COLOR;
-  context.beginPath();
-  context.arc(equivalentX, equivalentY, 6, 0, Math.PI * 2);
-  context.fill();
+  const legend = [
+    { label: "90% range", color: CHART_BAND_COLOR, line: false },
+    { label: "50% range", color: SOFT_LINE_COLOR, line: false },
+    { label: "median", color: DYNAMIC_COLOR, line: true },
+  ];
+  let legendX = plot.left;
+  context.textAlign = "left";
+  context.textBaseline = "middle";
+  for (const item of legend) {
+    if (item.line) {
+      context.strokeStyle = item.color;
+      context.lineWidth = 1.5;
+      context.beginPath();
+      context.moveTo(legendX, 10);
+      context.lineTo(legendX + 16, 10);
+      context.stroke();
+    } else {
+      context.fillStyle = item.color;
+      context.fillRect(legendX, 6, 16, 8);
+    }
+    context.fillStyle = MUTED_COLOR;
+    context.fillText(item.label, legendX + 22, 10);
+    legendX += 22 + context.measureText(item.label).width + 12;
+  }
 }
 
 function renderSensitivityChart(currentShare) {
@@ -503,43 +547,6 @@ function renderSensitivityChart(currentShare) {
 }
 
 function renderAdditionalModels(share) {
-  const startingWealth = 100;
-  const riskFreeGrowth = values.r * startingWealth;
-  const rewardForRisk = share * (values.mu - values.r) * startingWealth;
-  const expectedWealthChange = riskFreeGrowth + rewardForRisk;
-  const randomChangeScale = Math.abs(share * values.sigma * startingWealth);
-
-  renderLatex(
-    "decomposition-equation",
-    String.raw`\underbrace{\frac{\mathbb{E}[dW_t\mid W_t]}{dt}}_{\text{expected wealth change}}=\underbrace{${dynamicLatex(money.format(riskFreeGrowth))}}_{\text{risk-free growth}}+\underbrace{${dynamicLatex(money.format(rewardForRisk))}}_{\text{reward for risk}}=${dynamicLatex(money.format(expectedWealthChange))}\text{ per year}`,
-  );
-  document.getElementById("wealth-share").textContent = allocationPercent.format(share);
-  document.getElementById("wealth-volatility").textContent = money.format(randomChangeScale);
-
-  const equivalent = certaintyEquivalent(75, 125);
-  const certaintyDiscount = 100 - equivalent;
-  document.getElementById("certainty-equivalent").textContent = money.format(equivalent);
-  document.getElementById("utility-gamma").textContent = decimal.format(values.gamma);
-  if (Math.abs(values.gamma - 1) < 0.00001) {
-    renderLiveSentence(
-      "utility-explanation",
-      "At γ = ",
-      dynamicText(decimal.format(values.gamma)),
-      ", CRRA is interpreted by its logarithmic limit. The investor would surrender ",
-      dynamicText(money.format(certaintyDiscount)),
-      " of expected wealth to replace this gamble with certainty.",
-    );
-  } else {
-    renderLiveSentence(
-      "utility-explanation",
-      "At γ = ",
-      dynamicText(decimal.format(values.gamma)),
-      ", the investor would surrender ",
-      dynamicText(money.format(certaintyDiscount)),
-      " of expected wealth to replace this gamble with certainty.",
-    );
-  }
-
   const constrained = Math.min(1, Math.max(0, share));
   renderLatex(
     "constraint-equation",
@@ -568,11 +575,8 @@ function renderAdditionalModels(share) {
     );
   }
 
-  document.getElementById("return-sensitivity").textContent =
-    `${percentagePoints.format(100 * 0.01 / (values.gamma * values.sigma ** 2))} pp`;
   document.getElementById("sensitivity-current-share").textContent = allocationPercent.format(share);
 
-  renderUtilityChart();
   renderSensitivityChart(share);
 }
 
@@ -745,6 +749,16 @@ function scheduleControlContext() {
   });
 }
 
+let wealthChartFrame;
+function scheduleWealthChart() {
+  if (wealthChartFrame) return;
+  wealthChartFrame = requestAnimationFrame(() => {
+    const share = riskyShare();
+    renderWealthFanChart(values.r + share * (values.mu - values.r), Math.abs(share * values.sigma));
+    wealthChartFrame = undefined;
+  });
+}
+
 function render() {
   const share = riskyShare();
   const portfolioReturn = values.r + share * (values.mu - values.r);
@@ -785,6 +799,7 @@ function render() {
   }
 
   renderChart(share);
+  renderWealthFanChart(portfolioReturn, portfolioVolatility);
   renderAdditionalModels(share);
 }
 
@@ -807,3 +822,4 @@ render();
 updateControlContext();
 window.addEventListener("scroll", scheduleControlContext, { passive: true });
 window.addEventListener("resize", scheduleControlContext);
+window.addEventListener("resize", scheduleWealthChart);
