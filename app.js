@@ -12,8 +12,8 @@ const CHART_BAND_COLOR = cssToken("--chart-band");
 const CHART_CENTER_COLOR = cssToken("--chart-center");
 const SERIF_FONT = cssToken("--serif");
 const CHART_FONT = Object.freeze({
-  title: `${cssToken("--type-heading")} ${SERIF_FONT}`,
-  annotation: `${cssToken("--type-subheading")} ${SERIF_FONT}`,
+  title: `${cssToken("--type-content-heading")} ${SERIF_FONT}`,
+  annotation: `${cssToken("--type-content-subheading")} ${SERIF_FONT}`,
 });
 const FAN_CHART_FONT = `${cssToken("--type-small")} ${SERIF_FONT}`;
 
@@ -23,6 +23,12 @@ const values = {
   sigma: 0.125,
   gamma: 3,
 };
+
+const DEFAULT_WEALTH_Y_MAXIMUM = 500;
+const WEALTH_SCALE_EXPAND_THRESHOLD = 0.94;
+const WEALTH_SCALE_SHRINK_THRESHOLD = 0.78;
+let wealthFanYMaximum = DEFAULT_WEALTH_Y_MAXIMUM;
+let wealthFanChartState;
 
 const inputs = [...document.querySelectorAll("input[data-key]")];
 const inputsByKey = new Map(inputs.map((input) => [input.dataset.key, input]));
@@ -36,6 +42,8 @@ const inputBounds = Object.fromEntries(
 const controlsContainer = document.querySelector(".controls");
 const controlElements = [...document.querySelectorAll("[data-control]")];
 const contextualSections = [...document.querySelectorAll("[data-uses]")];
+const wealthFanCanvas = document.getElementById("wealth-fan-chart");
+const wealthFanTooltip = document.getElementById("wealth-fan-tooltip");
 
 const ratePercent = new Intl.NumberFormat("en-US", {
   style: "percent",
@@ -62,6 +70,10 @@ const compactMoney = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
   notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+const yearNumber = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 1,
 });
 
@@ -261,9 +273,26 @@ function renderChart(optimalShare) {
   }
 }
 
+function nextWealthScale(scale) {
+  const magnitude = 10 ** Math.floor(Math.log10(scale));
+  const normalized = scale / magnitude;
+  if (normalized < 2) return 2 * magnitude;
+  if (normalized < 5) return 5 * magnitude;
+  return 10 * magnitude;
+}
+
+function previousWealthScale(scale) {
+  const magnitude = 10 ** Math.floor(Math.log10(scale));
+  const normalized = scale / magnitude;
+  if (normalized <= 1) return 5 * (magnitude / 10);
+  if (normalized <= 2) return magnitude;
+  return 2 * magnitude;
+}
+
 function renderWealthFanChart(portfolioReturn, portfolioVolatility) {
-  const canvas = document.getElementById("wealth-fan-chart");
+  const canvas = wealthFanCanvas;
   if (!canvas) return;
+  hideWealthFanTooltip();
 
   const width = canvas.clientWidth;
   const height = canvas.clientHeight;
@@ -303,10 +332,18 @@ function renderWealthFanChart(portfolioReturn, portfolioVolatility) {
   document.getElementById("wealth-fan-lower-90").textContent = money.format(terminalSample.lower90);
   document.getElementById("wealth-fan-upper-90").textContent = money.format(terminalSample.upper90);
   const maximumWealth = Math.max(initialWealth, ...samples.map(({ upper90 }) => upper90));
-  const magnitude = 10 ** Math.floor(Math.log10(maximumWealth * 1.05));
-  const scaledMaximum = (maximumWealth * 1.05) / magnitude;
-  const niceStep = [1, 1.25, 1.5, 2, 2.5, 5, 10].find((step) => step >= scaledMaximum) ?? 10;
-  const yMaximum = niceStep * magnitude;
+  while (maximumWealth > wealthFanYMaximum * WEALTH_SCALE_EXPAND_THRESHOLD) {
+    wealthFanYMaximum = nextWealthScale(wealthFanYMaximum);
+  }
+
+  while (wealthFanYMaximum > DEFAULT_WEALTH_Y_MAXIMUM) {
+    const smallerScale = Math.max(DEFAULT_WEALTH_Y_MAXIMUM, previousWealthScale(wealthFanYMaximum));
+    if (maximumWealth >= smallerScale * WEALTH_SCALE_SHRINK_THRESHOLD) break;
+    wealthFanYMaximum = smallerScale;
+  }
+
+  const yMaximum = wealthFanYMaximum;
+  wealthFanChartState = { plot, samples };
   const x = (year) => plot.left + (year / horizon) * (plot.right - plot.left);
   const y = (wealth) => plot.bottom - (wealth / yMaximum) * (plot.bottom - plot.top);
 
@@ -544,6 +581,44 @@ function renderSensitivityChart(currentShare) {
     context.textBaseline = "bottom";
     context.fillText(specification.axisLabel, (plot.left + plot.right) / 2, height - 7);
   });
+}
+
+function hideWealthFanTooltip() {
+  if (wealthFanTooltip) wealthFanTooltip.hidden = true;
+}
+
+function showWealthFanTooltip(event) {
+  if (!wealthFanCanvas || !wealthFanTooltip || !wealthFanChartState) return;
+  const canvasBounds = wealthFanCanvas.getBoundingClientRect();
+  const chartX = event.clientX - canvasBounds.left;
+  const chartY = event.clientY - canvasBounds.top;
+  const { plot, samples } = wealthFanChartState;
+  if (chartX < plot.left || chartX > plot.right || chartY < plot.top || chartY > plot.bottom) {
+    hideWealthFanTooltip();
+    return;
+  }
+
+  const progress = (chartX - plot.left) / (plot.right - plot.left);
+  const sample = samples[Math.round(progress * (samples.length - 1))];
+  document.getElementById("wealth-fan-tooltip-year").textContent = yearNumber.format(sample.year);
+  document.getElementById("wealth-fan-tooltip-median").textContent = money.format(sample.median);
+  document.getElementById("wealth-fan-tooltip-50").textContent =
+    `${money.format(sample.lower50)}–${money.format(sample.upper50)}`;
+  document.getElementById("wealth-fan-tooltip-90").textContent =
+    `${money.format(sample.lower90)}–${money.format(sample.upper90)}`;
+
+  const figureBounds = wealthFanCanvas.closest("figure").getBoundingClientRect();
+  const pointerX = event.clientX - figureBounds.left;
+  const pointerY = event.clientY - figureBounds.top;
+  wealthFanTooltip.hidden = false;
+  let left = pointerX + 12;
+  let top = pointerY - wealthFanTooltip.offsetHeight - 10;
+  if (left + wealthFanTooltip.offsetWidth > figureBounds.width) {
+    left = pointerX - wealthFanTooltip.offsetWidth - 12;
+  }
+  if (top < 0) top = pointerY + 12;
+  wealthFanTooltip.style.left = `${left}px`;
+  wealthFanTooltip.style.top = `${top}px`;
 }
 
 function renderAdditionalModels(share) {
@@ -816,6 +891,9 @@ for (const button of scenarioButtons) {
     render();
   });
 }
+
+wealthFanCanvas?.addEventListener("pointermove", showWealthFanTooltip);
+wealthFanCanvas?.addEventListener("pointerleave", hideWealthFanTooltip);
 
 renderStaticMath();
 render();

@@ -303,6 +303,12 @@
                 role="img"
                 aria-label="Ten-year fan chart showing model-implied median wealth and fifty and ninety percent ranges for one hundred dollars invested at the optimal share"
               ></canvas>
+              <div class="wealth-fan-tooltip" id="wealth-fan-tooltip" role="tooltip" hidden>
+                <strong>Year <span class="live-number" id="wealth-fan-tooltip-year"></span></strong>
+                <span>Median <span class="live-number" id="wealth-fan-tooltip-median"></span></span>
+                <span>50% range <span class="live-number" id="wealth-fan-tooltip-50"></span></span>
+                <span>90% range <span class="live-number" id="wealth-fan-tooltip-90"></span></span>
+              </div>
               <p class="wealth-fan-summary" aria-live="polite">
                 After 10 years, median wealth is <span class="live-number" id="wealth-fan-median"></span>,
                 with a 50% range of <span class="live-number" id="wealth-fan-lower-50"></span>–<span class="live-number" id="wealth-fan-upper-50"></span>

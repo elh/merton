@@ -15,6 +15,9 @@
   --type-body: 15px;
   --type-heading: 21px;
   --type-subheading: 17px;
+  --type-content-body: 14px;
+  --type-content-heading: 20px;
+  --type-content-subheading: 16px;
   --type-result: 19px;
   --type-symbol: 14px;
   --type-small: 11.5px;
@@ -88,6 +91,7 @@ main {
 .article-copy {
   width: min(100%, 680px);
   margin-left: 0;
+  font-size: var(--type-content-body);
 }
 
 .article-copy p {
@@ -98,7 +102,7 @@ main {
 .article-copy h2 {
   margin: var(--space-section) 0 var(--space-copy);
   color: var(--ink);
-  font-size: var(--type-heading);
+  font-size: var(--type-content-heading);
   font-weight: 600;
   line-height: var(--leading-heading);
 }
@@ -118,7 +122,7 @@ main {
 .article-copy h3 {
   margin: var(--space-subsection) 0 var(--space-copy);
   color: var(--ink);
-  font-size: var(--type-subheading);
+  font-size: var(--type-content-subheading);
   font-weight: 600;
   line-height: var(--leading-subheading);
 }
@@ -514,6 +518,37 @@ input[type="range"]::-moz-range-thumb {
 .wealth-fan-figure,
 .sensitivity-figure {
   margin: var(--space-block) 0 var(--space-copy);
+}
+
+.wealth-fan-figure {
+  position: relative;
+}
+
+.wealth-fan-tooltip {
+  position: absolute;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 4px 7px 5px;
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  background: var(--paper);
+  color: var(--muted);
+  font-size: var(--type-label);
+  line-height: var(--leading-dense);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.wealth-fan-tooltip strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.wealth-fan-tooltip[hidden] {
+  display: none;
 }
 
 .figure-caption {
