@@ -32,6 +32,7 @@ let wealthFanChartState;
 
 const inputs = [...document.querySelectorAll("input[data-key]")];
 const inputsByKey = new Map(inputs.map((input) => [input.dataset.key, input]));
+const inputTrackWidths = new Map();
 const scenarioButtons = [...document.querySelectorAll("[data-scenario]")];
 const inputBounds = Object.fromEntries(
   inputs.map((input) => [
@@ -44,6 +45,9 @@ const controlElements = [...document.querySelectorAll("[data-control]")];
 const contextualSections = [...document.querySelectorAll("[data-uses]")];
 const wealthFanCanvas = document.getElementById("wealth-fan-chart");
 const wealthFanTooltip = document.getElementById("wealth-fan-tooltip");
+const focusToggle = document.getElementById("focus-toggle");
+const focusToggleSymbol = focusToggle?.querySelector(".focus-toggle-symbol");
+const focusToggleLabel = focusToggle?.querySelector(".focus-toggle-label");
 
 const ratePercent = new Intl.NumberFormat("en-US", {
   style: "percent",
@@ -677,6 +681,8 @@ const parameterSymbols = {
   gamma: "γ",
 };
 let scrubState;
+let hoveredParameter;
+let hasInteractedWithParameter = false;
 
 function parameterFormat(key, value) {
   return key === "gamma" ? decimal.format(value) : ratePercent.format(value);
@@ -707,18 +713,33 @@ function decorateAdjustableNumbers() {
   }
 }
 
-function showScrubTooltip(element) {
+function showScrubTooltip(element, { hinting = false } = {}) {
   if (!scrubTooltip || !element) return;
   const key = element.dataset.parameter;
   const bounds = element.getBoundingClientRect();
+
+  if (hinting && (bounds.bottom < 0 || bounds.top > window.innerHeight)) {
+    hideScrubTooltip();
+    return;
+  }
+
   if (scrubTooltipLabel) scrubTooltipLabel.textContent = `${parameterSymbols[key]} ${parameterNames[key]}`;
   scrubTooltip.style.left = `${bounds.left + bounds.width / 2}px`;
   scrubTooltip.style.top = `${bounds.top}px`;
+  scrubTooltip.classList.toggle("is-hinting", hinting);
   scrubTooltip.hidden = false;
 }
 
 function hideScrubTooltip() {
-  if (scrubTooltip) scrubTooltip.hidden = true;
+  if (!scrubTooltip) return;
+  scrubTooltip.classList.remove("is-hinting");
+  scrubTooltip.hidden = true;
+}
+
+function showInitialScrubHint() {
+  if (hasInteractedWithParameter || scrubState || hoveredParameter) return;
+  const firstParameter = mertonEquation?.querySelector('[data-parameter="mu"]');
+  if (firstParameter) showScrubTooltip(firstParameter, { hinting: true });
 }
 
 function steppedValue(input, candidate) {
@@ -728,6 +749,16 @@ function steppedValue(input, candidate) {
   const clamped = Math.min(maximum, Math.max(minimum, candidate));
   const stepped = minimum + Math.round((clamped - minimum) / step) * step;
   return Number(stepped.toFixed(8));
+}
+
+function inputTrackWidth(input) {
+  const width = input.getBoundingClientRect().width;
+  if (width > 0) inputTrackWidths.set(input.dataset.key, width);
+  return width || inputTrackWidths.get(input.dataset.key) || 1;
+}
+
+function rememberInputTrackWidths() {
+  for (const input of inputs) inputTrackWidth(input);
 }
 
 function setParameterValue(key, candidate) {
@@ -741,6 +772,7 @@ function setParameterValue(key, candidate) {
 
 function finishScrub() {
   scrubState = undefined;
+  hoveredParameter = undefined;
   document.documentElement.classList.remove("is-scrubbing");
   hideScrubTooltip();
 }
@@ -748,15 +780,18 @@ function finishScrub() {
 mertonEquation?.addEventListener("pointermove", (event) => {
   if (scrubState) return;
   const element = parameterElement(event.target, event.clientX, event.clientY);
+  hoveredParameter = element;
   mertonEquation.classList.toggle("is-parameter-hovered", Boolean(element));
   if (element) showScrubTooltip(element);
-  else hideScrubTooltip();
+  else showInitialScrubHint();
 });
 
 mertonEquation?.addEventListener("pointerleave", () => {
   if (scrubState) return;
+  hoveredParameter = undefined;
   mertonEquation.classList.remove("is-parameter-hovered");
-  hideScrubTooltip();
+  if (hasInteractedWithParameter) hideScrubTooltip();
+  else showInitialScrubHint();
 });
 
 mertonEquation?.addEventListener("pointerdown", (event) => {
@@ -768,12 +803,14 @@ mertonEquation?.addEventListener("pointerdown", (event) => {
   if (!input) return;
 
   event.preventDefault();
+  hasInteractedWithParameter = true;
+  hoveredParameter = element;
   scrubState = {
     key,
     pointerId: event.pointerId,
     startX: event.clientX,
     startValue: values[key],
-    width: Math.max(input.getBoundingClientRect().width, 1),
+    width: inputTrackWidth(input),
   };
   document.documentElement.classList.add("is-scrubbing");
   showScrubTooltip(element);
@@ -824,6 +861,15 @@ function scheduleControlContext() {
   });
 }
 
+let scrubHintFrame;
+function scheduleScrubHint() {
+  if (scrubHintFrame || hasInteractedWithParameter) return;
+  scrubHintFrame = requestAnimationFrame(() => {
+    showInitialScrubHint();
+    scrubHintFrame = undefined;
+  });
+}
+
 let wealthChartFrame;
 function scheduleWealthChart() {
   if (wealthChartFrame) return;
@@ -858,6 +904,7 @@ function render() {
     { trust: true },
   );
   decorateAdjustableNumbers();
+  showInitialScrubHint();
   renderLiveSentence("allocation-sentence", ...allocationDescription(share));
   renderLatex(
     "portfolio-return-equation",
@@ -892,6 +939,20 @@ for (const button of scenarioButtons) {
   });
 }
 
+focusToggle?.addEventListener("click", () => {
+  const focused = !document.body.classList.contains("focus-mode");
+  rememberInputTrackWidths();
+  document.body.classList.toggle("focus-mode", focused);
+  focusToggle.setAttribute("aria-pressed", String(focused));
+  focusToggle.setAttribute("aria-label", focused ? "Return to essay mode" : "Enter focus mode");
+  focusToggle.setAttribute("title", focused ? "Essay mode" : "Focus mode");
+  if (focusToggleSymbol) focusToggleSymbol.textContent = focused ? "⊗" : "⊕";
+  if (focusToggleLabel) focusToggleLabel.textContent = focused ? "Back" : "Focus";
+  hideWealthFanTooltip();
+  window.scrollTo({ top: 0, behavior: "instant" });
+  requestAnimationFrame(render);
+});
+
 wealthFanCanvas?.addEventListener("pointermove", showWealthFanTooltip);
 wealthFanCanvas?.addEventListener("pointerleave", hideWealthFanTooltip);
 
@@ -899,5 +960,7 @@ renderStaticMath();
 render();
 updateControlContext();
 window.addEventListener("scroll", scheduleControlContext, { passive: true });
+window.addEventListener("scroll", scheduleScrubHint, { passive: true });
 window.addEventListener("resize", scheduleControlContext);
 window.addEventListener("resize", scheduleWealthChart);
+window.addEventListener("resize", scheduleScrubHint);

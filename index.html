@@ -12,6 +12,17 @@
     <title>Merton’s Portfolio Problem</title>
   </head>
   <body>
+    <button
+      class="focus-toggle"
+      id="focus-toggle"
+      type="button"
+      aria-label="Enter focus mode"
+      aria-pressed="false"
+      title="Focus mode"
+    >
+      <span class="focus-toggle-symbol" aria-hidden="true">⊕</span>
+      <span class="focus-toggle-label">Focus</span>
+    </button>
     <main>
       <article class="notebook">
         <aside class="controls-rail" aria-label="Optimal risky share">
@@ -220,41 +231,45 @@
             </p>
           </section>
 
-          <section data-uses="mu r sigma gamma" aria-labelledby="optimal-allocation">
-            <h2 id="optimal-allocation">Optimal allocation</h2>
+          <section class="optimal-section" data-uses="mu r sigma gamma" aria-labelledby="optimal-allocation">
+            <div class="focus-group focus-tradeoff">
+              <h2 id="optimal-allocation">Optimal allocation</h2>
 
-            <p>
-              The portfolio choice balances reward against risk. Investing a fraction <i>π</i> in the risky asset
-              contributes expected reward <i>π</i>(<i>μ</i> − <i>r</i>). Its
-              <a href="https://en.wikipedia.org/wiki/Variance">variance</a> grows as
-              <i>π</i><sup>2</sup><i>σ</i><sup>2</sup>, and <i>γ</i> determines how strongly that risk is penalized.
-              The relevant tradeoff is
-            </p>
+              <p>
+                The portfolio choice balances reward against risk. Investing a fraction <i>π</i> in the risky asset
+                contributes expected reward <i>π</i>(<i>μ</i> − <i>r</i>). Its
+                <a href="https://en.wikipedia.org/wiki/Variance">variance</a> grows as
+                <i>π</i><sup>2</sup><i>σ</i><sup>2</sup>, and <i>γ</i> determines how strongly that risk is penalized.
+                The relevant tradeoff is
+              </p>
 
-            <div class="tradeoff-equation tex-equation tex-left" id="tradeoff-equation"></div>
+              <div class="tradeoff-equation tex-equation tex-left" id="tradeoff-equation"></div>
 
-            <figure class="tradeoff-figure">
-              <svg class="tradeoff-chart" viewBox="0 0 740 220" role="img" aria-labelledby="tradeoff-title tradeoff-description">
-                <title id="tradeoff-title">Reward minus risk penalty by risky allocation</title>
-                <desc id="tradeoff-description">A concave reward-minus-risk curve over nonnegative risky allocations.</desc>
-                <line class="chart-zero" id="zero-line"></line>
-                <g id="chart-ticks"></g>
-                <path class="chart-path" id="tradeoff-path"></path>
-                <line class="chart-guide" id="optimum-guide"></line>
-                <circle class="chart-halo" id="optimum-halo" r="9"></circle>
-                <circle class="chart-point" id="optimum" r="4"></circle>
-                <text class="axis-title" x="381" y="218" text-anchor="middle">share of wealth in the risky asset, π</text>
-              </svg>
-              <figcaption class="figure-caption" id="tradeoff-caption" aria-live="polite"></figcaption>
-            </figure>
+              <figure class="tradeoff-figure">
+                <svg class="tradeoff-chart" viewBox="0 0 740 220" role="img" aria-labelledby="tradeoff-title tradeoff-description">
+                  <title id="tradeoff-title">Reward minus risk penalty by risky allocation</title>
+                  <desc id="tradeoff-description">A concave reward-minus-risk curve over nonnegative risky allocations.</desc>
+                  <line class="chart-zero" id="zero-line"></line>
+                  <g id="chart-ticks"></g>
+                  <path class="chart-path" id="tradeoff-path"></path>
+                  <line class="chart-guide" id="optimum-guide"></line>
+                  <circle class="chart-halo" id="optimum-halo" r="9"></circle>
+                  <circle class="chart-point" id="optimum" r="4"></circle>
+                  <text class="axis-title" transform="translate(15 94) rotate(-90)" text-anchor="middle">reward − risk penalty</text>
+                  <text class="axis-title" x="381" y="218" text-anchor="middle">share of wealth in the risky asset, π</text>
+                </svg>
+                <figcaption class="figure-caption" id="tradeoff-caption" aria-live="polite"></figcaption>
+              </figure>
 
-            <p>
-              At the maximum, the slope is zero:
-              (<i>μ</i> − <i>r</i>) − <i>γπσ</i><sup>2</sup> = 0.
-            </p>
+              <p>
+                At the maximum, the slope is zero:
+                (<i>μ</i> − <i>r</i>) − <i>γπσ</i><sup>2</sup> = 0.
+              </p>
+            </div>
 
             <div class="portfolio-rule" id="portfolio-rule">
-              <p>Rearranging gives a <strong>closed-form portfolio rule</strong>:</p>
+              <p class="rule-intro">Rearranging gives a <strong>closed-form portfolio rule</strong>:</p>
+              <h3 class="focus-rule-title">Closed-form portfolio rule</h3>
 
               <div
                 class="math-display tex-equation solution-formula"
@@ -275,74 +290,78 @@
               wealth; the proportion does not.
             </p>
 
-            <h3>Portfolio implications</h3>
-            <p>
-              Once <i>π</i><sup>∗</sup> is known, the portfolio's expected return and volatility follow directly:
-            </p>
+            <div class="focus-group focus-returns">
+              <h3>Portfolio implications</h3>
+              <p>
+                Once <i>π</i><sup>∗</sup> is known, the portfolio's expected return and volatility follow directly:
+              </p>
 
-            <div class="solution-implications">
-              <div
-                class="solution-implication tex-equation tex-left"
-                id="portfolio-return-equation"
-                aria-label="Portfolio expected return under the current assumptions"
-                aria-live="polite"
-              ></div>
-              <div
-                class="solution-implication tex-equation tex-left"
-                id="portfolio-volatility-equation"
-                aria-label="Portfolio volatility under the current assumptions"
-                aria-live="polite"
-              ></div>
+              <div class="solution-implications">
+                <div
+                  class="solution-implication tex-equation tex-left"
+                  id="portfolio-return-equation"
+                  aria-label="Portfolio expected return under the current assumptions"
+                  aria-live="polite"
+                ></div>
+                <div
+                  class="solution-implication tex-equation tex-left"
+                  id="portfolio-volatility-equation"
+                  aria-label="Portfolio volatility under the current assumptions"
+                  aria-live="polite"
+                ></div>
+              </div>
+
+              <figure class="wealth-fan-figure">
+                <canvas
+                  id="wealth-fan-chart"
+                  width="1280"
+                  height="340"
+                  role="img"
+                  aria-label="Ten-year fan chart showing model-implied median wealth and fifty and ninety percent ranges for one hundred dollars invested at the optimal share"
+                ></canvas>
+                <div class="wealth-fan-tooltip" id="wealth-fan-tooltip" role="tooltip" hidden>
+                  <strong>Year <span class="live-number" id="wealth-fan-tooltip-year"></span></strong>
+                  <span>Median <span class="live-number" id="wealth-fan-tooltip-median"></span></span>
+                  <span>50% range <span class="live-number" id="wealth-fan-tooltip-50"></span></span>
+                  <span>90% range <span class="live-number" id="wealth-fan-tooltip-90"></span></span>
+                </div>
+                <p class="wealth-fan-summary" aria-live="polite">
+                  After 10 years, median wealth is <span class="live-number" id="wealth-fan-median"></span>,
+                  with a 50% range of <span class="live-number" id="wealth-fan-lower-50"></span>–<span class="live-number" id="wealth-fan-upper-50"></span>
+                  and a 90% range of <span class="live-number" id="wealth-fan-lower-90"></span>–<span class="live-number" id="wealth-fan-upper-90"></span>.
+                </p>
+                <figcaption class="figure-caption">
+                  Illustrative growth of $100 over 10 years at the optimal share. Model-implied 50% and 90% ranges
+                  assume constant inputs, continuous rebalancing, and no consumption, cash flows, fees, taxes, or
+                  inflation; they are not forecasts.
+                </figcaption>
+              </figure>
             </div>
 
-            <figure class="wealth-fan-figure">
-              <canvas
-                id="wealth-fan-chart"
-                width="1280"
-                height="340"
-                role="img"
-                aria-label="Ten-year fan chart showing model-implied median wealth and fifty and ninety percent ranges for one hundred dollars invested at the optimal share"
-              ></canvas>
-              <div class="wealth-fan-tooltip" id="wealth-fan-tooltip" role="tooltip" hidden>
-                <strong>Year <span class="live-number" id="wealth-fan-tooltip-year"></span></strong>
-                <span>Median <span class="live-number" id="wealth-fan-tooltip-median"></span></span>
-                <span>50% range <span class="live-number" id="wealth-fan-tooltip-50"></span></span>
-                <span>90% range <span class="live-number" id="wealth-fan-tooltip-90"></span></span>
-              </div>
-              <p class="wealth-fan-summary" aria-live="polite">
-                After 10 years, median wealth is <span class="live-number" id="wealth-fan-median"></span>,
-                with a 50% range of <span class="live-number" id="wealth-fan-lower-50"></span>–<span class="live-number" id="wealth-fan-upper-50"></span>
-                and a 90% range of <span class="live-number" id="wealth-fan-lower-90"></span>–<span class="live-number" id="wealth-fan-upper-90"></span>.
+            <div class="focus-group focus-sensitivity">
+              <h3>Comparative statics</h3>
+              <p>
+                In <a href="https://en.wikipedia.org/wiki/Comparative_statics">comparative statics</a>, each panel
+                varies one term while holding the others fixed. The middle band is an ordinary 0–100%
+                allocation; below it the solution
+                <a href="https://en.wikipedia.org/wiki/Short_(finance)">shorts the risky asset</a>, and above it the
+                solution uses <a href="https://en.wikipedia.org/wiki/Leverage_(finance)">leverage</a>.
               </p>
-              <figcaption class="figure-caption">
-                Illustrative growth of $100 over 10 years at the optimal share. Model-implied 50% and 90% ranges
-                assume constant inputs, continuous rebalancing, and no consumption, cash flows, fees, taxes, or
-                inflation; they are not forecasts.
-              </figcaption>
-            </figure>
-
-            <h3>Comparative statics</h3>
-            <p>
-              In <a href="https://en.wikipedia.org/wiki/Comparative_statics">comparative statics</a>, each panel
-              varies one term while holding the others fixed. The middle band is an ordinary 0–100%
-              allocation; below it the solution
-              <a href="https://en.wikipedia.org/wiki/Short_(finance)">shorts the risky asset</a>, and above it the
-              solution uses <a href="https://en.wikipedia.org/wiki/Leverage_(finance)">leverage</a>.
-            </p>
-            <figure class="sensitivity-figure">
-              <canvas
-                class="sensitivity-chart"
-                id="sensitivity-chart"
-                width="1280"
-                height="480"
-                role="img"
-                aria-label="Three charts showing the Merton share as excess return, volatility, and risk aversion vary; the middle band marks allocations between zero and one hundred percent"
-              ></canvas>
-              <figcaption class="figure-caption">
-                The highlighted points show the current assumptions, where <i>π</i><sup>∗</sup> =
-                <span class="live-number" id="sensitivity-current-share"></span>.
-              </figcaption>
-            </figure>
+              <figure class="sensitivity-figure">
+                <canvas
+                  class="sensitivity-chart"
+                  id="sensitivity-chart"
+                  width="1280"
+                  height="480"
+                  role="img"
+                  aria-label="Three charts showing the Merton share as excess return, volatility, and risk aversion vary; the middle band marks allocations between zero and one hundred percent"
+                ></canvas>
+                <figcaption class="figure-caption">
+                  The highlighted points show the current assumptions, where <i>π</i><sup>∗</sup> =
+                  <span class="live-number" id="sensitivity-current-share"></span>.
+                </figcaption>
+              </figure>
+            </div>
 
             <h3>Portfolio constraints</h3>
             <p>

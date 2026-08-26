@@ -39,6 +39,7 @@
   --space-subsection: 34px;
   --space-section: 40px;
   --height-wealth-fan: 180px;
+  --height-wealth-fan-focus: 160px;
   font-family: var(--serif);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -78,6 +79,41 @@ a:focus-visible {
   outline-offset: 3px;
 }
 
+.focus-toggle {
+  position: fixed;
+  z-index: 20;
+  top: var(--space-tight);
+  right: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--serif);
+  font-weight: 400;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.focus-toggle-symbol {
+  display: block;
+  font-size: var(--type-subheading);
+  line-height: 1;
+  transform: translateY(-1px);
+}
+
+.focus-toggle-label {
+  display: block;
+  font-size: var(--type-small);
+  line-height: 1;
+}
+
+.focus-toggle:hover {
+  color: var(--ink);
+}
+
 main {
   padding: 28px 24px 56px;
 }
@@ -92,6 +128,14 @@ main {
   width: min(100%, 680px);
   margin-left: 0;
   font-size: var(--type-content-body);
+}
+
+.focus-group {
+  display: contents;
+}
+
+.focus-rule-title {
+  display: none;
 }
 
 .article-copy p {
@@ -216,6 +260,27 @@ html.is-scrubbing * {
 
 .scrub-tooltip[hidden] {
   display: none;
+}
+
+.scrub-tooltip.is-hinting {
+  animation: scrub-hint-bounce 4.8s ease-in-out infinite;
+}
+
+@keyframes scrub-hint-bounce {
+  0%,
+  100% {
+    transform: translate(-50%, calc(-100% - 7px));
+  }
+
+  50% {
+    transform: translate(-50%, calc(-100% - 9px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrub-tooltip.is-hinting {
+    animation: none;
+  }
 }
 
 .scrub-tooltip::after {
@@ -421,7 +486,17 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .scenario-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-tight);
   margin: 15px 0 5px;
+}
+
+.scenario-heading::after {
+  height: 1px;
+  flex: 1;
+  background: var(--line-soft);
+  content: "";
 }
 
 .scenario-row {
@@ -431,9 +506,8 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .scenario {
-  position: relative;
   min-height: 0;
-  padding: 5px 0 6px 12px;
+  padding: 5px 0 6px;
   border: 0;
   background: transparent;
   color: var(--ink);
@@ -442,25 +516,9 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
 }
 
-.scenario::before {
-  position: absolute;
-  top: 9px;
-  left: 0;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: transparent;
-  content: "";
-}
-
 .scenario:hover,
 .scenario.active {
   color: var(--dynamic);
-}
-
-.scenario:hover::before,
-.scenario.active::before {
-  background: var(--dynamic);
 }
 
 .scenario-title,
@@ -655,6 +713,129 @@ input[type="range"]::-moz-range-thumb {
   font-size: var(--type-formula-compact);
 }
 
+body.focus-mode main {
+  padding-bottom: var(--space-exploration);
+}
+
+body.focus-mode .notebook {
+  width: min(100%, 1440px);
+  padding-right: 0;
+}
+
+body.focus-mode .controls-rail {
+  display: none;
+}
+
+body.focus-mode .article-copy {
+  width: 100%;
+}
+
+body.focus-mode .article-copy > :not(.article-title, .optimal-section) {
+  display: none;
+}
+
+body.focus-mode .article-title {
+  margin-bottom: var(--space-exploration);
+}
+
+body.focus-mode .optimal-section {
+  display: grid;
+  grid-template-areas:
+    "rule tradeoff"
+    "returns sensitivity";
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-exploration) var(--space-section);
+  align-items: start;
+}
+
+body.focus-mode .optimal-section > * {
+  display: none;
+}
+
+body.focus-mode .optimal-section > .focus-group,
+body.focus-mode .optimal-section > .portfolio-rule {
+  display: block;
+}
+
+body.focus-mode .focus-tradeoff {
+  grid-area: tradeoff;
+}
+
+body.focus-mode .portfolio-rule {
+  grid-area: rule;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+body.focus-mode .portfolio-rule::before,
+body.focus-mode .portfolio-rule::after {
+  display: none;
+}
+
+body.focus-mode .portfolio-rule > .rule-intro {
+  display: none;
+}
+
+body.focus-mode .portfolio-rule > .focus-rule-title {
+  display: block;
+  margin: 0 0 var(--space-copy);
+}
+
+body.focus-mode .focus-returns {
+  grid-area: returns;
+}
+
+body.focus-mode .focus-sensitivity {
+  grid-area: sensitivity;
+}
+
+body.focus-mode .focus-group > h2,
+body.focus-mode .focus-group > h3,
+body.focus-mode .portfolio-rule > .focus-rule-title {
+  margin: 0 0 var(--space-copy);
+  font-size: var(--type-content-subheading);
+  font-weight: 600;
+  line-height: var(--leading-subheading);
+}
+
+body.focus-mode .focus-group > p,
+body.focus-mode .focus-group .figure-caption {
+  display: none;
+}
+
+body.focus-mode .tradeoff-equation,
+body.focus-mode .solution-implications {
+  margin: 0 0 var(--space-copy);
+}
+
+body.focus-mode .solution-implications {
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+  gap: var(--space-copy);
+}
+
+body.focus-mode .tradeoff-figure,
+body.focus-mode .wealth-fan-figure,
+body.focus-mode .sensitivity-figure,
+body.focus-mode .sensitivity-chart {
+  margin: 0;
+}
+
+body.focus-mode #wealth-fan-chart {
+  height: var(--height-wealth-fan-focus);
+}
+
+@media (max-width: 1000px) {
+  body.focus-mode .optimal-section {
+    grid-template-areas:
+      "rule"
+      "tradeoff"
+      "returns"
+      "sensitivity";
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 720px) {
   :root {
     --height-wealth-fan: 150px;
@@ -662,6 +843,10 @@ input[type="range"]::-moz-range-thumb {
 
   main {
     padding: 20px 18px 44px;
+  }
+
+  .focus-toggle {
+    position: absolute;
   }
 
   .notebook {
